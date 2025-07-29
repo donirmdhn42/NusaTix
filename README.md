@@ -21,17 +21,6 @@
 
 ---
 
-## 🗂 Struktur Proyek
-
-NusaTix/
-├── admin/ # Panel admin (dashboard, manajemen konten)
-├── assets/ # Fungsi Ajax.js
-├── backend/ # API, auth, DB, model & helper
-├── uploads/ # Upload bukti transfer & poster film
-├── views/ # Halaman utama pengguna
-
----
-
 ## 🛠 Teknologi
 
 - **Backend:** PHP Native
