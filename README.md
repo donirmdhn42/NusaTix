@@ -54,10 +54,6 @@ Seluruh fitur utama seperti pemesanan tiket, jadwal film, hingga verifikasi pemb
 Doni Setiawan Ramadhan
 GitHub: [@donirmdhn42](https://github.com/donirmdhn42)
 
----
 
-## 📄 Lisensi
-
-Proyek ini bersifat open-source dan dapat digunakan sebagai referensi untuk pembelajaran non-komersial.
 
 
