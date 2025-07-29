@@ -1,5 +1,4 @@
 <?php
-// backend/api/schedule_handler.php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -19,7 +18,7 @@ switch ($action) {
         sendResponse('success', 'Data grup jadwal berhasil diambil.', $groups);
         break;
 
-    case 'get_group_details': // NEW: To fetch single group details for editing
+    case 'get_group_details': 
         $id_group = intval($_GET['id_group'] ?? 0);
         if ($id_group <= 0) {
             sendResponse('error', 'ID grup tidak valid.');
@@ -37,15 +36,13 @@ switch ($action) {
             sendResponse('error', 'Semua field wajib diisi.');
         }
 
-        // Determine if it's an update or new creation
         $id_group = intval($_POST['id_group'] ?? 0);
         
-        $result = saveScheduleGroup($conn, $_POST, $id_group); // Pass id_group to the save function
+        $result = saveScheduleGroup($conn, $_POST, $id_group); 
         if ($result === true) {
             $message = ($id_group > 0) ? 'Grup jadwal berhasil diperbarui.' : 'Grup jadwal baru berhasil dibuat.';
             sendResponse('success', $message);
         } else {
-            // Tampilkan pesan error spesifik dari database jika ada
             sendResponse('error', 'Gagal: ' . $result);
         }
         break;

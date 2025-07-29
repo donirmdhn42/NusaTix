@@ -1,5 +1,4 @@
 <?php
-// admin/manage_schedules.php
 date_default_timezone_set('Asia/Jakarta');
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/templates/header.php';

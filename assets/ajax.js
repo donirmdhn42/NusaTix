@@ -1,12 +1,9 @@
-// ==== LOGIKA MANAJEMEN FILM ====
-
 function loadFilmsAdmin() {
   const tbody = document.getElementById('film-tbody');
   if (!tbody) return;
 
   tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Memuat data film...</td></tr>';
   const status = document.getElementById('filter-film-status')?.value ?? '';
-  // Mengasumsikan backend API diubah menjadi film_api.php
   fetch(`../backend/film_api.php?action=list&status=${status}`)
     .then(res => res.json().catch(() => { throw new Error("Respons bukan JSON") }))
     .then(response => {
@@ -163,7 +160,6 @@ function loadBookingsAdmin() {
   const status = document.getElementById('filter-booking-status')?.value ?? '';
   const search = document.getElementById('search-nama-user')?.value ?? '';
 
-  // Mengasumsikan backend API diubah menjadi booking_api.php
   fetch(`../backend/booking_api.php?action=list&status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}`)
     .then(res => res.json())
     .then(response => {
@@ -179,7 +175,6 @@ function loadBookingsAdmin() {
         return;
       }
       bookingList.forEach(b => {
-        // API diharapkan melakukan JOIN untuk mendapatkan nama user, judul film, dll.
         tbody.innerHTML += `
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${b.user_name}</div><div class="text-xs text-gray-500">${b.user_email}</div></td>
@@ -280,7 +275,6 @@ function tutupModalBooking() {
   bookingTerpilih = null;
 }
 
-// Fungsi untuk memuat ulang semua data di halaman admin
 function refreshAllData() {
     if (document.getElementById('film-tbody')) loadFilmsAdmin();
     if (document.getElementById('booking-tbody')) loadBookingsAdmin();
@@ -311,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ==== FUNGSI HELPERS ====
 
 function handleFetchError(error) {
     console.error('Fetch Error:', error);
@@ -324,11 +317,9 @@ function handleFetchError(error) {
 
 function statusColor(status) {
   const colors = {
-    // Film statuses
     now_showing: 'bg-green-100 text-green-800',
     coming_soon: 'bg-yellow-100 text-yellow-800',
     archived: 'bg-gray-100 text-gray-800',
-    // Booking statuses
     paid: 'bg-blue-100 text-blue-800',
     booked: 'bg-orange-100 text-orange-800',
     cancelled: 'bg-red-100 text-red-800',
@@ -338,7 +329,6 @@ function statusColor(status) {
 
 function statusLabel(status) {
   if (!status) return 'Undefined';
-  // Mengganti underscore dengan spasi dan membuat huruf kapital
   return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 

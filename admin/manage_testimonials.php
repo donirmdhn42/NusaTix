@@ -35,12 +35,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableBody = document.getElementById('testimonial-table-body');
 
     function loadTestimonials() {
-        // Panggil API untuk mendapatkan semua testimoni
         fetch('../backend/api/testimonial_handler.php?action=get_all')
             .then(res => res.json())
             .then(data => {
-                tableBody.innerHTML = ''; // Kosongkan tabel sebelum diisi
-                 if (data.status === 'success' && data.data && data.data.length > 0) { // Check data.data for testimonials array
+                tableBody.innerHTML = ''; 
+                 if (data.status === 'success' && data.data && data.data.length > 0) { 
                     data.data.forEach(t => {
                         const ratingStars = '<div class="flex items-center gap-1 text-amber-500">' + '⭐'.repeat(t.rating) + '</div>';
                         const row = `
@@ -69,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Fungsi untuk menghapus testimoni
     window.deleteTestimonial = function(id) {
         Swal.fire({
             title: 'Yakin ingin menghapus?',
@@ -91,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(data => {
                         if (data.status === 'success') {
                             Swal.fire({icon: 'success', title: 'Dihapus!', text: data.message, showConfirmButton: false, timer: 1500});
-                            loadTestimonials(); // Muat ulang data setelah berhasil dihapus
+                            loadTestimonials(); 
                         } else {
                             Swal.fire({icon: 'error', title: 'Gagal!', text: data.message});
                         }
@@ -104,7 +102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Panggil fungsi untuk memuat testimoni saat halaman dimuat
     loadTestimonials();
 });
 </script>

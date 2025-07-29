@@ -1,5 +1,4 @@
 <?php
-// admin/manage_studios.php
 require_once __DIR__ . '/templates/header.php';
 ?>
 <div class="p-6 md:p-8">

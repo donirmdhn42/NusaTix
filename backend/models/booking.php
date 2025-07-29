@@ -1,6 +1,4 @@
 <?php
-// backend/models/booking.php
-
 class Booking
 {
 

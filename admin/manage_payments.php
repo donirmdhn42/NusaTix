@@ -1,15 +1,11 @@
 <?php
-// admin/manage_payments.php
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/models/Booking.php';
 
-// --- BLOK INI DIPINDAHKAN KE ATAS ---
-// Handle aksi admin (approve/reject) sebelum ada output HTML
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $payment_id = intval($_POST['payment_id'] ?? 0);
     $booking_id = intval($_POST['booking_id'] ?? 0);
     
-    // Mulai session jika belum ada, karena kita akan menggunakan $_SESSION
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -32,16 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $_SESSION['flash_status'] = 'error';
         }
     }
-    // Redirect sekarang akan berfungsi karena belum ada HTML yang dikirim
     header('Location: manage_payments.php');
     exit();
 }
-// --- AKHIR BLOK YANG DIPINDAHKAN ---
 
-// Header dipanggil SETELAH logika form selesai
 require_once __DIR__ . '/templates/header.php';
 
-// Ambil data pembayaran yang pending
 $pending_payments = Booking::getPendingPayments($conn);
 ?>
 <div class="p-6 md:p-8">
@@ -51,9 +43,9 @@ $pending_payments = Booking::getPendingPayments($conn);
             <p class="text-slate-500 mt-1">Daftar pembayaran yang perlu diverifikasi. Setujui jika bukti valid, atau tolak jika tidak.</p>
         </div>
 
-        <?php if (isset($_SESSION['flash_message'])): 
-            $status_class = $_SESSION['flash_status'] === 'success' 
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-700' 
+        <?php if (isset($_SESSION['flash_message'])):
+            $status_class = $_SESSION['flash_status'] === 'success'
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
                 : 'bg-rose-50 border-rose-500 text-rose-700';
         ?>
             <div class="<?= $status_class ?> border-l-4 p-4 rounded-r-lg" role="alert">
@@ -91,7 +83,7 @@ $pending_payments = Booking::getPendingPayments($conn);
                                     Rp<?= number_format($p['amount'], 0, ',', '.') ?>
                                 </td>
                                 <td class="py-4 px-6">
-                                    <a href="../uploads/proofs/<?= htmlspecialchars($p['proof_of_payment']) ?>" target="_blank" class="font-semibold text-primary hover:opacity-80">
+                                    <a href="../uploads/<?= htmlspecialchars($p['proof_of_payment']) ?>" target="_blank" class="font-semibold text-primary hover:opacity-80">
                                         Lihat Bukti <i class="fas fa-external-link-alt fa-xs ml-1"></i>
                                     </a>
                                 </td>
@@ -129,8 +121,8 @@ $pending_payments = Booking::getPendingPayments($conn);
             text: "Pastikan bukti pembayaran sudah valid sebelum melanjutkan.",
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#10b981', // emerald-500
-            cancelButtonColor: '#64748b', // slate-500
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#64748b',
             confirmButtonText: 'Ya, Setujui!',
             cancelButtonText: 'Batal'
         }).then((result) => {
@@ -148,14 +140,13 @@ $pending_payments = Booking::getPendingPayments($conn);
             input: 'text',
             inputPlaceholder: 'Contoh: Bukti transfer tidak jelas',
             showCancelButton: true,
-            confirmButtonColor: '#e92932', // primary
-            cancelButtonColor: '#64748b', // slate-500
+            confirmButtonColor: '#e92932',
+            cancelButtonColor: '#64748b',
             confirmButtonText: 'Ya, Tolak!',
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = document.getElementById(`form-reject-${paymentId}`);
-                // Jika admin memberikan alasan, tambahkan ke form sebelum submit
                 if (result.value) {
                     const notesInput = document.createElement('input');
                     notesInput.type = 'hidden';

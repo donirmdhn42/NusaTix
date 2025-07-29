@@ -1,13 +1,10 @@
 <?php
-// admin/dashboard.php
 date_default_timezone_set('Asia/Jakarta');
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/models/Booking.php';
 
-// Memuat header admin (light mode)
 require_once __DIR__ . '/templates/header.php';
 
-// --- Mengambil Data Statistik ---
 $stats = [];
 $result_bookings = $conn->query("SELECT COUNT(id_booking) as total FROM bookings WHERE status IN ('paid', 'pending', 'booked')");
 $stats['total_bookings'] = $result_bookings->fetch_assoc()['total'] ?? 0;

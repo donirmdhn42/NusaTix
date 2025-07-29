@@ -1,13 +1,10 @@
 <?php
-// backend/api/studio_handler.php
-
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../models/studio.php';
 
-// Fungsi helper untuk mengirim response JSON
 function sendResponse($status, $message, $data = null) {
     echo json_encode([
         'status' => $status,
@@ -44,13 +41,10 @@ switch ($action) {
         break;
 
     case 'save':
-        // 1. Validasi dulu
         if (empty($_POST['name']) || empty($_POST['capacity'])) {
             sendResponse('error', 'Nama dan kapasitas studio tidak boleh kosong.');
-            // Setelah mengirim response, eksekusi harus berhenti di sini jika ada error.
         }
 
-        // 2. Jika validasi lolos, baru simpan
         if (saveStudio($conn, $_POST)) {
             $message = !empty($_POST['id_studio']) ? 'Studio berhasil diperbarui.' : 'Studio berhasil ditambahkan.';
             sendResponse('success', $message);

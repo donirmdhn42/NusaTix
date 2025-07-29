@@ -1,12 +1,10 @@
 <?php
-// backend/api/promo_handler.php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../models/promo.php';
 
-// Fungsi helper untuk mengirim response JSON yang konsisten
 function sendResponse($status, $message, $data = null) {
     $isSuccess = ($status === 'success');
     echo json_encode(['status' => $status, 'success' => $isSuccess, 'message' => $message, 'data' => $data]);
@@ -46,7 +44,6 @@ switch ($action) {
         break;
 
     case 'delete':
-        // ==> PERBAIKAN DI SINI: Menggunakan 'id' sesuai kiriman dari JavaScript <==
         $id = intval($_POST['id'] ?? 0);
         if ($id <= 0) { sendResponse('error', 'ID promo tidak valid untuk dihapus.'); }
 

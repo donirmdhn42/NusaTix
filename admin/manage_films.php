@@ -1,5 +1,4 @@
 <?php
-// admin/manage_films.php
 require_once __DIR__ . '/templates/header.php';
 ?>
 
@@ -128,10 +127,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const posterErrorDisplay = document.getElementById('poster-error');
     const clearPosterBtn = document.getElementById('clear-poster-btn');
     const defaultPreviewHTML = posterPreview.innerHTML;
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; 
 
-    // Add a general class for all form inputs for consistent styling
-    // This is added directly in the HTML by replacing 'w-full p-2.5 border...' with 'form-input'
     const style = document.createElement('style');
     style.innerHTML = `
         .form-input {
@@ -213,18 +210,17 @@ document.addEventListener('DOMContentLoaded', function() {
         posterFilenameDisplay.textContent = '';
         posterErrorDisplay.classList.add('hidden');
         clearPosterBtn.classList.add('hidden');
-        posterDropzone.classList.remove('border-primary', 'bg-primary/10', 'border-red-500'); // Remove error border
+        posterDropzone.classList.remove('border-primary', 'bg-primary/10', 'border-red-500'); 
         formTitle.textContent = 'Tambah Film Baru';
         form.querySelector('button[type="submit"]').textContent = 'Simpan Film';
-        // Remove valid/invalid styling
         document.querySelectorAll('.form-input').forEach(input => {
             input.classList.remove('border-green-500', 'border-red-500');
         });
     }
 
     function handleFile(file) {
-        posterErrorDisplay.classList.add('hidden'); // Hide previous error
-        posterDropzone.classList.remove('border-red-500'); // Remove error border
+        posterErrorDisplay.classList.add('hidden'); 
+        posterDropzone.classList.remove('border-red-500'); 
 
         if (!file) {
             posterPreview.innerHTML = defaultPreviewHTML;
@@ -264,7 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     posterInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
     
-    // Drag and Drop events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         posterDropzone.addEventListener(eventName, (e) => {
             e.preventDefault();
@@ -281,37 +276,35 @@ document.addEventListener('DOMContentLoaded', function() {
     posterDropzone.addEventListener('drop', (e) => {
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            posterInput.files = files; // Set files to the input element
+            posterInput.files = files; 
             handleFile(files[0]);
         }
     });
 
     clearPosterBtn.addEventListener('click', () => {
-        posterInput.value = ''; // Clear the file input
-        document.getElementById('current_poster').value = ''; // Clear current_poster if any
-        handleFile(null); // Reset the preview
+        posterInput.value = ''; 
+        document.getElementById('current_poster').value = ''; 
+        handleFile(null); 
     });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // Manual validation for poster if creating a new film and no poster is selected
         const idFilm = document.getElementById('id_film').value;
         const currentPoster = document.getElementById('current_poster').value;
         const posterFile = posterInput.files[0];
 
-        if (!idFilm && !posterFile && !currentPoster) { // Only require for new films, or if no current poster exists for existing
+        if (!idFilm && !posterFile && !currentPoster) { 
             posterErrorDisplay.textContent = 'Poster film wajib diunggah.';
             posterErrorDisplay.classList.remove('hidden');
             posterDropzone.classList.add('border-red-500');
-            return; // Stop submission
+            return; 
         }
 
-        // Additional check for image file validity if one is selected
         if (posterFile) {
             if (!posterFile.type.startsWith('image/') || posterFile.size > MAX_FILE_SIZE) {
                 Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: 'Mohon periksa kembali file gambar Anda (tipe dan ukuran).' });
-                return; // Stop submission
+                return; 
             }
         }
 
@@ -351,14 +344,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('release_date').value = film.release_date;
                     document.getElementById('status').value = film.status;
                     document.getElementById('description').value = film.description;
-                    document.getElementById('current_poster').value = film.poster; // Save current poster filename
+                    document.getElementById('current_poster').value = film.poster; 
 
-                    // Reset file input value to allow re-selection
                     posterInput.value = '';
                     
                     if (film.poster) {
                         posterPreview.innerHTML = `<img src="../uploads/posters/${film.poster}" class="max-h-full max-w-full object-contain rounded-lg">`;
-                        posterFilenameDisplay.textContent = film.poster; // Display existing filename
+                        posterFilenameDisplay.textContent = film.poster; 
                         clearPosterBtn.classList.remove('hidden');
                     } else {
                          posterPreview.innerHTML = defaultPreviewHTML;

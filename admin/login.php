@@ -1,7 +1,5 @@
 <?php
-// admin/login.php
 session_start();
-// Jika sudah login sebagai admin, langsung redirect ke dashboard
 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
     header("Location: dashboard.php");
     exit();
@@ -21,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: dashboard.php");
             exit();
         } else {
-            // Jika bukan admin, logout dan beri pesan error
             session_unset();
             session_destroy();
             $error_message = "Akses ditolak. Hanya admin yang dapat login.";

@@ -7,20 +7,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Mengambil data film
 $films = getAllFilms($conn);
 $now_showing_films = array_filter($films, fn($film) => $film['status'] === 'now_showing');
 $coming_soon_films = array_filter($films, fn($film) => $film['status'] === 'coming_soon');
 $genres = array_filter(array_unique(array_column($now_showing_films, 'genre')));
 sort($genres);
 
-// NOTE: Ensure your `getAllTestimonials` function also selects `film.id_film`.
-// Example query might be:
-// SELECT t.*, u.name as user_name, f.title as film_title, f.id_film
-// FROM testimonials t
-// JOIN users u ON t.user_id = u.id_user
-// JOIN films f ON t.film_id = f.id_film
-// WHERE t.is_approved = 1 ORDER BY t.created_at DESC LIMIT ?
 $testimonials = Testimonial::getAllTestimonials($conn, 5);
 
 $recommended_films = getRecommendedFilms($conn, 8);
@@ -33,6 +25,7 @@ $has_coming_soon = !empty($coming_soon_films);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NusaTix - Nonton Jadi Gampang</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' fill='%23ff0000' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
     <link rel="stylesheet" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?display=swap&family=Be+Vietnam+Pro%3Awght%4400%3B500%3B700%3B900&family=Noto+Sans%3Awght%4400%3B500%3B700%3B900" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries,line-clamp"></script>
@@ -466,7 +459,6 @@ $has_coming_soon = !empty($coming_soon_films);
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inisialisasi Hero Slider
             const heroSlider = new Swiper('.hero-slider', {
                 loop: true,
                 effect: 'fade',
@@ -483,7 +475,6 @@ $has_coming_soon = !empty($coming_soon_films);
                 },
             });
 
-            // Inisialisasi Coming Soon Slider
             const comingSoonSlider = new Swiper('.coming-soon-slider', {
                 loop: true,
                 autoplay: {
@@ -507,7 +498,6 @@ $has_coming_soon = !empty($coming_soon_films);
                 }
             });
 
-            // Inisialisasi Testimonial Slider
             const testimonialSlider = new Swiper('.testimonial-slider', {
                 loop: true,
                 autoplay: {
@@ -534,7 +524,6 @@ $has_coming_soon = !empty($coming_soon_films);
                 }
             });
             
-            // --- Combined Film Filter Logic (Search and Genre) ---
             const searchInput = document.getElementById('film-search-input');
             const genreButtons = document.querySelectorAll('.genre-btn');
             const filmCards = document.querySelectorAll('#now-showing-list .film-card');
@@ -568,7 +557,6 @@ $has_coming_soon = !empty($coming_soon_films);
             
             searchInput.addEventListener('input', filterAndDisplayFilms);
 
-            // Logika tombol geser manual untuk slider film
             const sliderButtons = document.querySelectorAll('.manual-slider-btn');
             sliderButtons.forEach(button => {
                 button.addEventListener('click', function() {
@@ -589,7 +577,6 @@ $has_coming_soon = !empty($coming_soon_films);
                 });
             });
 
-            // Logika salin kode promo
             const copyButtons = document.querySelectorAll('.copy-promo-btn');
             copyButtons.forEach(button => {
                 button.addEventListener('click', function() {
@@ -608,7 +595,6 @@ $has_coming_soon = !empty($coming_soon_films);
                 });
             });
 
-            // Logika Tombol Pengingat
             let reminders = JSON.parse(localStorage.getItem('filmReminders')) || [];
 
             function updateButtonStates() {

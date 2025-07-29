@@ -1,19 +1,8 @@
 <?php
-// backend/models/promo.php
-
 if (!function_exists('applyPromo')) {
-    /**
-     * Memvalidasi dan menerapkan kode promo dengan logika anti-curang.
-     *
-     * @param mysqli $conn Koneksi database.
-     * @param string $promo_code Kode promo yang akan diterapkan.
-     * @param float $base_price Harga asli sebelum diskon.
-     * @param int $user_id ID pengguna yang menerapkan promo.
-     * @return array Hasil array dengan status, pesan, dan data.
-     */
+
     function applyPromo(mysqli $conn, string $promo_code, float $base_price, int $user_id): array
     {
-        // 1. Cari promo yang aktif dan valid
         $stmt = $conn->prepare("SELECT * FROM promos WHERE code = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE()");
         $stmt->bind_param("s", $promo_code);
         $stmt->execute();
@@ -23,25 +12,19 @@ if (!function_exists('applyPromo')) {
             return ['success' => false, 'message' => 'Kode promo tidak valid atau kedaluwarsa.'];
         }
 
-        // 2. Periksa pembelian minimum
         if ($base_price < $promo['min_purchase']) {
             return ['success' => false, 'message' => 'Belanja minimal Rp ' . number_format($promo['min_purchase']) . ' untuk promo ini.'];
         }
 
-        // ==> LOGIKA PENTING ANTI-CURANG <==
-        // Promo dianggap terpakai jika statusnya 'booked', 'pending', atau 'paid'.
-        // Ini "mengunci" promo begitu booking dibuat untuk mencegah penggunaan ganda di tab lain.
         $stmt_check = $conn->prepare("SELECT COUNT(*) as total_used FROM bookings WHERE id_user = ? AND id_promo = ? AND status IN ('booked', 'pending', 'paid')");
         $stmt_check->bind_param("ii", $user_id, $promo['id_promo']);
         $stmt_check->execute();
         $usage = $stmt_check->get_result()->fetch_assoc();
 
-        // Pastikan usage limit per user ada dan lebih besar dari 0 sebelum membandingkan
         if (isset($promo['usage_limit_per_user']) && $promo['usage_limit_per_user'] > 0 && $usage['total_used'] >= $promo['usage_limit_per_user']) {
             return ['success' => false, 'message' => 'Anda sudah menggunakan promo ini pada booking lain.'];
         }
 
-        // 3. Hitung diskon
         $discount_amount = 0;
         if ($promo['discount_type'] === 'percent') {
             $discount_amount = $base_price * ($promo['discount_value'] / 100);
@@ -64,7 +47,6 @@ if (!function_exists('applyPromo')) {
     }
 }
 
-// Tambahkan fungsi-fungsi lain untuk manajemen promo (jika belum ada)
 function getAllPromos($conn) {
     $sql = "SELECT * FROM promos ORDER BY valid_until DESC";
     $result = $conn->query($sql);
@@ -94,10 +76,10 @@ function savePromo($conn, $data) {
     $is_active = isset($data['is_active']) ? 1 : 0;
     $usage_limit = !empty($data['usage_limit_per_user']) ? intval($data['usage_limit_per_user']) : 1;
 
-    if ($id > 0) { // Update
+    if ($id > 0) { 
         $stmt = $conn->prepare("UPDATE promos SET code=?, description=?, discount_type=?, discount_value=?, min_purchase=?, max_discount=?, valid_from=?, valid_until=?, is_active=?, usage_limit_per_user=? WHERE id_promo=?");
         $stmt->bind_param("sssddsssiii", $code, $description, $discount_type, $discount_value, $min_purchase, $max_discount, $valid_from, $valid_until, $is_active, $usage_limit, $id);
-    } else { // Create
+    } else { 
         $stmt = $conn->prepare("INSERT INTO promos (code, description, discount_type, discount_value, min_purchase, max_discount, valid_from, valid_until, is_active, usage_limit_per_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("sssddsssii", $code, $description, $discount_type, $discount_value, $min_purchase, $max_discount, $valid_from, $valid_until, $is_active, $usage_limit);
     }

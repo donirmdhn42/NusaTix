@@ -1,39 +1,33 @@
 <?php
-// views/booking_user.php
 session_start();
 
-// Redirect jika user belum login
 if (!isset($_SESSION['user_id'])) {
     $redirect_url = urlencode($_SERVER['REQUEST_URI']);
     header("Location: ../login.php?redirect_url=$redirect_url");
     exit();
 }
 
-// Memuat semua file model yang dibutuhkan
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/models/schedule.php';
 require_once __DIR__ . '/../backend/models/studio.php';
 require_once __DIR__ . '/../backend/models/promo.php';
-require_once __DIR__ . '/../backend/models/booking.php'; // Penting: Memuat model booking
+require_once __DIR__ . '/../backend/models/booking.php';
 
-// Validasi ID Jadwal dari URL
 $schedule_id = intval($_GET['schedule_id'] ?? 0);
-if (!$schedule_id) { die("ID Jadwal tidak valid."); }
+if (!$schedule_id) {
+    die("ID Jadwal tidak valid.");
+}
 
-// Ambil detail jadwal dari database
 $schedule_details = getScheduleWithDetailsById($conn, $schedule_id);
-if (!$schedule_details) { die("Jadwal tidak ditemukan."); }
+if (!$schedule_details) {
+    die("Jadwal tidak ditemukan.");
+}
 
 $user_id = $_SESSION['user_id'];
 
-// =================================================================
-// ==> LOGIKA ANTI-CALO BAGIAN 1: PEMBLOKIRAN SAAT MEMBUKA HALAMAN <==
-// =================================================================
 $max_tickets_per_session = 3;
-// Memanggil fungsi baru untuk menghitung tiket yang sudah ada
 $existing_tickets = Booking::countUserTicketsForSchedule($conn, $user_id, $schedule_id);
 
-// Jika pengguna sudah mencapai batas, tampilkan halaman error dan hentikan script
 if ($existing_tickets >= $max_tickets_per_session) {
     echo <<<HTML
     <!DOCTYPE html>
@@ -42,6 +36,7 @@ if ($existing_tickets >= $max_tickets_per_session) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Batas Pembelian Tercapai</title>
+        <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' fill='%23ff0000' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E" type="image/svg+xml">
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
@@ -58,16 +53,14 @@ if ($existing_tickets >= $max_tickets_per_session) {
     </body>
     </html>
 HTML;
-    exit(); // Hentikan eksekusi script
+    exit();
 }
 
-// Lanjutkan proses jika pengguna belum mencapai batas
 $booked_seat_codes = getBookedSeatsByScheduleId($conn, $schedule_id);
 $all_studio_seats = getSeatsByStudioId($conn, $schedule_details['id_studio']);
 $booking_message = '';
 $booking_status = '';
 
-// Proses form saat disubmit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'book') {
     $selected_seat_codes = !empty($_POST['selected_seats']) ? explode(',', $_POST['selected_seats']) : [];
     $promo_code = trim($_POST['promo_code'] ?? '');
@@ -76,15 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $booking_message = "Pilih setidaknya satu kursi.";
         $booking_status = "error";
     } else {
-        // =============================================================================
-        // ==> LOGIKA ANTI-CALO BAGIAN 2: VALIDASI SAAT PROSES PEMBELIAN (SUBMIT)      <==
-        // =============================================================================
+
         $num_seats_to_buy = count($selected_seat_codes);
         if (($existing_tickets + $num_seats_to_buy) > $max_tickets_per_session) {
             $booking_message = "Gagal: Anda sudah punya {$existing_tickets} tiket. Anda tidak bisa membeli {$num_seats_to_buy} tiket lagi (batas {$max_tickets_per_session} tiket per sesi).";
             $booking_status = "error";
         } else {
-            // Lanjutkan proses booking jika validasi lolos
             $conn->begin_transaction();
             try {
                 $current_booked_seats = getBookedSeatsByScheduleId($conn, $schedule_id);
@@ -92,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 if (!empty($conflict_seats)) {
                     throw new Exception("Kursi " . implode(', ', $conflict_seats) . " baru saja dipesan.");
                 }
-                
+
                 $base_price = $num_seats_to_buy * $schedule_details['price'];
                 $final_price = $base_price;
                 $promo_id_for_db = null;
@@ -106,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         throw new Exception($promo_result['message']);
                     }
                 }
-                
+
                 $stmt = $conn->prepare("INSERT INTO bookings (id_user, id_schedule, total_amount, status, id_promo) VALUES (?, ?, ?, 'booked', ?)");
                 $stmt->bind_param("iidi", $user_id, $schedule_id, $final_price, $promo_id_for_db);
                 $stmt->execute();
@@ -115,21 +105,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $stmt_ticket = $conn->prepare("INSERT INTO tickets (id_booking, id_seat, seat_code, price) VALUES (?, ?, ?, ?)");
                 foreach ($selected_seat_codes as $seat_code) {
                     $seat_id = null;
-                    foreach($all_studio_seats as $seat) { if ($seat['seat_code'] === $seat_code) { $seat_id = $seat['id_seat']; break; } }
+                    foreach ($all_studio_seats as $seat) {
+                        if ($seat['seat_code'] === $seat_code) {
+                            $seat_id = $seat['id_seat'];
+                            break;
+                        }
+                    }
                     if ($seat_id) {
                         $stmt_ticket->bind_param("iisd", $new_booking_id, $seat_id, $seat_code, $schedule_details['price']);
                         $stmt_ticket->execute();
-                    } else { throw new Exception("Kursi $seat_code tidak valid."); }
+                    } else {
+                        throw new Exception("Kursi $seat_code tidak valid.");
+                    }
                 }
-                
+
                 $conn->commit();
                 $booking_status = "success";
-                $_SESSION['last_booking_details'] = [ 
+                $_SESSION['last_booking_details'] = [
                     'booking_id' => $new_booking_id,
                     'final_price' => $final_price,
                     'expires_at' => time() + 60
                 ];
-
             } catch (Exception $e) {
                 $conn->rollback();
                 $booking_message = "Gagal membuat pesanan: " . $e->getMessage();
@@ -140,7 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Data untuk ditampilkan di View
 $film_title = $schedule_details['film_title'];
 $film_poster = "../uploads/posters/" . $schedule_details['film_poster'];
 $studio_name = $schedule_details['studio_name'];
@@ -150,10 +145,13 @@ $ticket_price = $schedule_details['price'];
 $js_data = ['all_seats' => $all_studio_seats, 'booked_seats' => $booked_seat_codes, 'ticket_price' => $ticket_price];
 $last_booking_id = $_SESSION['last_booking_details']['booking_id'] ?? null;
 $last_booking_price = $_SESSION['last_booking_details']['final_price'] ?? 0;
-if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
+if ($booking_status !== 'success') {
+    unset($_SESSION['last_booking_details']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -161,16 +159,50 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .seat { transition: all 0.2s ease-in-out; }
-        .seat.selected { background-color: #e92932; color: white; border-color: #e92932; transform: scale(1.1); }
-        .seat.booked { background-color: #4b5563; color: #9ca3af; border-color: #374151; cursor: not-allowed; }
-        .seat.available:hover { border-color: #e92932; }
-        .seat-row { display: grid; grid-template-columns: 2rem 1fr; align-items: center; gap: 1rem; }
-        .seat-grid { display: grid; gap: 0.75rem; }
-        .modal { display: none; }
-        .modal.flex { display: flex; }
+        .seat {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .seat.selected {
+            background-color: #e92932;
+            color: white;
+            border-color: #e92932;
+            transform: scale(1.1);
+        }
+
+        .seat.booked {
+            background-color: #4b5563;
+            color: #9ca3af;
+            border-color: #374151;
+            cursor: not-allowed;
+        }
+
+        .seat.available:hover {
+            border-color: #e92932;
+        }
+
+        .seat-row {
+            display: grid;
+            grid-template-columns: 2rem 1fr;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .seat-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .modal {
+            display: none;
+        }
+
+        .modal.flex {
+            display: flex;
+        }
     </style>
 </head>
+
 <body class="bg-[#181111] font-sans text-gray-300">
     <?php include __DIR__ . '/templates/header.php'; ?>
     <div class="container mx-auto my-8 p-4 sm:p-6">
@@ -189,9 +221,15 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                         <div id="seat-layout" class="space-y-4"></div>
                     </div>
                     <div class="flex justify-center flex-wrap gap-4 mt-6 text-sm text-gray-400">
-                        <div class="flex items-center"><div class="w-5 h-5 bg-[#382929] border border-gray-600 rounded-sm mr-2"></div> Tersedia</div>
-                        <div class="flex items-center"><div class="w-5 h-5 bg-[#e92932] rounded-sm mr-2"></div> Terpilih</div>
-                        <div class="flex items-center"><div class="w-5 h-5 bg-gray-600 rounded-sm mr-2"></div> Terpesan</div>
+                        <div class="flex items-center">
+                            <div class="w-5 h-5 bg-[#382929] border border-gray-600 rounded-sm mr-2"></div> Tersedia
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-5 h-5 bg-[#e92932] rounded-sm mr-2"></div> Terpilih
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-5 h-5 bg-gray-600 rounded-sm mr-2"></div> Terpesan
+                        </div>
                     </div>
                 </div>
             </div>
@@ -246,8 +284,8 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
             </div>
         </div>
     </div>
-    
-      <script>
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const MAX_TICKETS = 3;
             let selectedSeats = [];
@@ -270,7 +308,7 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
             function buildSeatLayout() {
                 if (!layoutContainer) return;
                 layoutContainer.innerHTML = '';
-                
+
                 if (!seatData.all_seats || seatData.all_seats.length === 0) {
                     layoutContainer.innerHTML = '<p class="text-center text-gray-500">Denah kursi belum tersedia.</p>';
                     return;
@@ -287,7 +325,7 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                 sortedRows.forEach(row => {
                     const rowDiv = document.createElement('div');
                     rowDiv.className = 'seat-row';
-                    
+
                     const rowLabel = document.createElement('div');
                     rowLabel.className = 'text-center font-bold text-gray-500';
                     rowLabel.textContent = row;
@@ -297,14 +335,14 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                     gridDiv.className = 'seat-grid';
                     const seatsInRow = seatMap[row].length;
                     gridDiv.style.gridTemplateColumns = `repeat(${seatsInRow}, minmax(0, 1fr))`;
-                    
+
                     seatMap[row].sort((a, b) => parseInt(a.substring(1)) - parseInt(b.substring(1))).forEach(seatCode => {
                         const seatDiv = document.createElement('div');
                         const isBooked = seatData.booked_seats.includes(seatCode);
                         seatDiv.dataset.seatCode = seatCode;
                         seatDiv.textContent = seatCode.substring(1);
                         seatDiv.className = `seat w-full h-12 flex items-center justify-center font-bold cursor-pointer border-2 rounded-lg ${isBooked ? 'booked' : 'available bg-[#382929] border-gray-600'}`;
-                        
+
                         if (!isBooked) {
                             seatDiv.addEventListener('click', handleSeatClick);
                         }
@@ -331,7 +369,7 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                         alert(`Anda hanya bisa memilih maksimal ${MAX_TICKETS} tiket.`);
                     }
                 }
-                
+
                 promoData = null;
                 promoCodeInput.value = '';
                 promoMessageEl.innerHTML = '';
@@ -348,7 +386,7 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                     discountAmount = promoData.data.discount_applied;
                     finalPrice = promoData.data.final_price;
                 }
-                
+
                 ticketCountDisplay.innerText = selectedSeats.length;
                 subtotalPriceDisplay.innerText = subtotal.toLocaleString('id-ID');
                 discountAmountDisplay.innerText = parseFloat(discountAmount).toLocaleString('id-ID');
@@ -365,25 +403,28 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                     promoMessageEl.innerText = 'Pilih kursi dan masukkan kode promo.';
                     return;
                 }
-                
+
                 promoMessageEl.className = 'text-sm text-yellow-400';
                 promoMessageEl.innerText = 'Menerapkan...';
-                
+
                 const formData = new FormData();
                 formData.append('action', 'apply_promo');
                 formData.append('promo_code', promoCode);
                 formData.append('original_price', selectedSeats.length * ticketPrice);
 
-                fetch('../backend/api/promo_handler.php', { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(res => {
-                    promoMessageEl.className = `text-sm ${res.success ? 'text-green-400' : 'text-red-400'}`;
-                    promoMessageEl.innerText = res.message;
-                    
-                    promoData = res; // Simpan seluruh respons
-                    
-                    updateSummary();
-                });
+                fetch('../backend/api/promo_handler.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        promoMessageEl.className = `text-sm ${res.success ? 'text-green-400' : 'text-red-400'}`;
+                        promoMessageEl.innerText = res.message;
+
+                        promoData = res;
+
+                        updateSummary();
+                    });
             });
 
             <?php if ($booking_status === 'success'): ?>
@@ -392,7 +433,7 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
                     modal.classList.add('flex');
                     setTimeout(() => {
                         const modalContent = modal.querySelector('.modal-content');
-                        if(modalContent) {
+                        if (modalContent) {
                             modalContent.classList.remove('scale-95', 'opacity-0');
                             modalContent.classList.add('scale-100', 'opacity-100');
                         }
@@ -403,10 +444,11 @@ if ($booking_status !== 'success') { unset($_SESSION['last_booking_details']); }
             <?php if ($booking_status === 'error' && !empty($booking_message)): ?>
                 alert("<?php echo addslashes($booking_message); ?>");
             <?php endif; ?>
-            
+
             buildSeatLayout();
             updateSummary();
         });
     </script>
 </body>
+
 </html>

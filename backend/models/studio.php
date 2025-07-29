@@ -1,6 +1,4 @@
 <?php
-// backend/models/studio.php
-
 function getAllStudios($conn) {
     $sql = "SELECT id_studio, name, capacity FROM studios ORDER BY name ASC";
     $result = $conn->query($sql);
@@ -24,10 +22,10 @@ function saveStudio($conn, $data) {
         $name = $data['name'];
         $capacity = intval($data['capacity']);
 
-        if ($id > 0) { // Proses Update
+        if ($id > 0) { 
             $stmt = $conn->prepare("UPDATE studios SET name = ?, capacity = ? WHERE id_studio = ?");
             $stmt->bind_param("sii", $name, $capacity, $id);
-        } else { // Proses Create
+        } else { 
             $stmt = $conn->prepare("INSERT INTO studios (name, capacity) VALUES (?, ?)");
             $stmt->bind_param("si", $name, $capacity);
         }
@@ -35,7 +33,6 @@ function saveStudio($conn, $data) {
         $new_id = ($id > 0) ? $id : $conn->insert_id;
         $stmt->close();
         
-        // Panggil fungsi yang sudah diperbaiki dengan membawa nilai kapasitas
         ensureSeatsMatchCapacity($conn, $new_id, $capacity);
         
         $conn->commit();
@@ -64,38 +61,31 @@ function getSeatsByStudioId($conn, $studio_id) {
     return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 }
 
-/**
- * FUNGSI YANG DIPERBAIKI: Memastikan jumlah kursi di database
- * sama persis dengan kapasitas studio.
- */
 function ensureSeatsMatchCapacity($conn, $studio_id, $capacity) {
-    // 1. Hapus semua kursi lama dari studio ini untuk memastikan kebersihan data.
     $stmt_delete = $conn->prepare("DELETE FROM seats WHERE id_studio = ?");
     $stmt_delete->bind_param("i", $studio_id);
     $stmt_delete->execute();
     $stmt_delete->close();
 
-    // 2. Buat kursi baru sejumlah kapasitas yang ditentukan.
     if ($capacity <= 0) {
-        return; // Jangan buat kursi jika kapasitasnya 0 atau kurang.
+        return; 
     }
 
     $seats_to_create = [];
-    $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']; // Cukup untuk banyak baris
-    $cols_per_row = 10; // Asumsi 10 kursi per baris, bisa disesuaikan
+    $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']; 
+    $cols_per_row = 10;
     
     $created_count = 0;
     foreach ($rows as $row) {
         for ($i = 1; $i <= $cols_per_row; $i++) {
             if ($created_count >= $capacity) {
-                break 2; // Hentikan kedua loop jika sudah mencapai kapasitas
+                break 2; 
             }
             $seats_to_create[] = $row . $i;
             $created_count++;
         }
     }
     
-    // 3. Masukkan data kursi baru ke database.
     $stmt_insert = $conn->prepare("INSERT INTO seats (id_studio, seat_code) VALUES (?, ?)");
     foreach ($seats_to_create as $seat_code) {
         $stmt_insert->bind_param("is", $studio_id, $seat_code);

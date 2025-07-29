@@ -1,5 +1,4 @@
 <?php
-// backend/models/schedule.php
 date_default_timezone_set('Asia/Jakarta');
 
 function getAllScheduleGroups($conn) {
@@ -22,12 +21,6 @@ function getScheduleGroupById($conn, $id_group) {
     return $group;
 }
 
-/**
- * =================================================================
- * ==> FUNGSI EDIT YANG DIPERBAIKI SECARA PAKSA <==
- * =================================================================
- * Logika ini akan menghapus semua data booking terkait sebelum mengedit.
- */
 function saveScheduleGroup($conn, $data, $id_group = 0) {
     $conn->begin_transaction();
     try {
@@ -40,8 +33,7 @@ function saveScheduleGroup($conn, $data, $id_group = 0) {
         sort($show_times_array);
         $show_times_json = json_encode($show_times_array);
 
-        if ($id_group > 0) { // Proses Edit
-            // 1. Ambil semua ID booking yang terkait dengan grup jadwal ini
+        if ($id_group > 0) { 
             $stmt_bookings = $conn->prepare("SELECT b.id_booking FROM bookings b JOIN schedules s ON b.id_schedule = s.id_schedule WHERE s.id_group = ?");
             $stmt_bookings->bind_param("i", $id_group);
             $stmt_bookings->execute();
@@ -52,7 +44,6 @@ function saveScheduleGroup($conn, $data, $id_group = 0) {
             }
             $stmt_bookings->close();
 
-            // 2. Jika ada booking, hapus semua data turunannya (payments, tickets, baru booking)
             if (!empty($booking_ids)) {
                 $booking_ids_str = implode(',', $booking_ids);
                 $conn->query("DELETE FROM payments WHERE id_booking IN ($booking_ids_str)");
@@ -60,19 +51,17 @@ function saveScheduleGroup($conn, $data, $id_group = 0) {
                 $conn->query("DELETE FROM bookings WHERE id_booking IN ($booking_ids_str)");
             }
 
-            // 3. Sekarang aman untuk menghapus jadwal lama
             $stmt_delete_schedules = $conn->prepare("DELETE FROM schedules WHERE id_group = ?");
             $stmt_delete_schedules->bind_param("i", $id_group);
             $stmt_delete_schedules->execute();
             $stmt_delete_schedules->close();
             
-            // 4. Perbarui data grup jadwal
             $stmt_update_group = $conn->prepare("UPDATE schedule_groups SET id_film = ?, id_studio = ?, price = ?, start_date = ?, end_date = ?, show_times = ? WHERE id_group = ?");
             $stmt_update_group->bind_param("iidsssi", $id_film, $id_studio, $price, $start_date_str, $end_date_str, $show_times_json, $id_group);
             $stmt_update_group->execute();
             $stmt_update_group->close();
 
-        } else { // Proses Buat Baru
+        } else { 
             $stmt_insert_group = $conn->prepare("INSERT INTO schedule_groups (id_film, id_studio, price, start_date, end_date, show_times) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt_insert_group->bind_param("iidsss", $id_film, $id_studio, $price, $start_date_str, $end_date_str, $show_times_json);
             $stmt_insert_group->execute();
@@ -80,7 +69,6 @@ function saveScheduleGroup($conn, $data, $id_group = 0) {
             $stmt_insert_group->close();
         }
 
-        // Generate ulang jadwal individual
         $start_date = new DateTime($start_date_str);
         $end_date = new DateTime($end_date_str);
         $end_date->modify('+1 day');
@@ -116,16 +104,9 @@ function saveScheduleGroup($conn, $data, $id_group = 0) {
     }
 }
 
-/**
- * =================================================================
- * ==> FUNGSI HAPUS YANG DIPERBAIKI SECARA PAKSA <==
- * =================================================================
- * Logika ini akan menghapus semua data booking terkait sebelum menghapus jadwal.
- */
 function deleteScheduleGroupById($conn, $id_group) {
     $conn->begin_transaction();
     try {
-        // 1. Ambil semua ID booking yang terkait
         $stmt_bookings = $conn->prepare("SELECT b.id_booking FROM bookings b JOIN schedules s ON b.id_schedule = s.id_schedule WHERE s.id_group = ?");
         $stmt_bookings->bind_param("i", $id_group);
         $stmt_bookings->execute();
@@ -136,7 +117,6 @@ function deleteScheduleGroupById($conn, $id_group) {
         }
         $stmt_bookings->close();
 
-        // 2. Jika ada booking, hapus data turunannya
         if (!empty($booking_ids)) {
             $booking_ids_str = implode(',', $booking_ids);
             $conn->query("DELETE FROM payments WHERE id_booking IN ($booking_ids_str)");
@@ -144,13 +124,11 @@ function deleteScheduleGroupById($conn, $id_group) {
             $conn->query("DELETE FROM bookings WHERE id_booking IN ($booking_ids_str)");
         }
         
-        // 3. Hapus jadwal individual
         $stmt_schedules = $conn->prepare("DELETE FROM schedules WHERE id_group = ?");
         $stmt_schedules->bind_param("i", $id_group);
         $stmt_schedules->execute();
         $stmt_schedules->close();
         
-        // 4. Hapus grup jadwal utama
         $stmt_group = $conn->prepare("DELETE FROM schedule_groups WHERE id_group = ?");
         $stmt_group->bind_param("i", $id_group);
         $stmt_group->execute();
@@ -164,8 +142,6 @@ function deleteScheduleGroupById($conn, $id_group) {
         return $e->getMessage();
     }
 }
-
-// --- Sisa fungsi di bawah ini tidak perlu diubah ---
 
 function getSchedulesByFilmId($conn, $film_id) {
     $today = date('Y-m-d');

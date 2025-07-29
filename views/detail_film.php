@@ -14,22 +14,18 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Ambil ID film dari URL
 $film_id = intval($_GET['id'] ?? 0);
 if ($film_id === 0) {
     die("Film tidak valid.");
 }
 
-// Ambil detail film dari database
 $film = getFilmById($conn, $film_id);
 if (!$film) {
     die("Film tidak ditemukan.");
 }
 
-// Ambil semua jadwal yang tersedia untuk film ini
 $schedules = getSchedulesByFilmId($conn, $film_id);
 
-// Kelompokkan jadwal berdasarkan tanggal
 $grouped_schedules = [];
 foreach ($schedules as $schedule) {
     $date = date('Y-m-d', strtotime($schedule['show_date']));
@@ -39,7 +35,6 @@ foreach ($schedules as $schedule) {
     $grouped_schedules[$date][] = $schedule;
 }
 
-// Fungsi helper untuk format tanggal Indonesia
 function formatIndonesianDateParts($date)
 {
     $days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -59,12 +54,12 @@ function formatIndonesianDateParts($date)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detail Film: <?= htmlspecialchars($film['title']) ?> - NusaTix</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' fill='%23ff0000' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
     <link rel="stylesheet" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?display=swap&family=Be+Vietnam+Pro%3Awght%4400%3B500%3B700%3B900&family=Noto+Sans%3Awght%4400%3B500%3B700%3B900" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Mengilangkan scrollbar visual pada kontainer tanggal */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -179,7 +174,6 @@ function formatIndonesianDateParts($date)
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // === Logika Tab Tanggal ===
             const dateTabs = document.querySelectorAll('.date-tab');
             const schedulePanes = document.querySelectorAll('.schedule-pane');
             if (dateTabs.length > 0) {
@@ -207,16 +201,14 @@ function formatIndonesianDateParts($date)
                 });
             }
 
-            // === Logika Tombol Geser (Slider) ===
             const scroller = document.getElementById('date-scroller');
             const btnLeft = document.getElementById('scroll-left-btn');
             const btnRight = document.getElementById('scroll-right-btn');
 
             if (scroller) {
-                const scrollAmount = 200; // Jarak geser per klik
+                const scrollAmount = 200; 
 
                 function updateScrollButtons() {
-                    // Cek apakah bisa scroll ke kiri
                     if (scroller.scrollLeft > 0) {
                         btnLeft.classList.remove('hidden');
                         btnLeft.classList.add('md:flex');
@@ -224,9 +216,8 @@ function formatIndonesianDateParts($date)
                         btnLeft.classList.add('hidden');
                         btnLeft.classList.remove('md:flex');
                     }
-                    // Cek apakah bisa scroll ke kanan
                     const maxScrollLeft = scroller.scrollWidth - scroller.clientWidth;
-                    if (scroller.scrollLeft < maxScrollLeft - 1) { // -1 untuk toleransi
+                    if (scroller.scrollLeft < maxScrollLeft - 1) { 
                         btnRight.classList.remove('hidden');
                         btnRight.classList.add('md:flex');
                     } else {
@@ -250,8 +241,6 @@ function formatIndonesianDateParts($date)
 
                 scroller.addEventListener('scroll', updateScrollButtons);
 
-                // Panggil sekali saat halaman dimuat untuk set state awal
-                // Timeout kecil untuk memastikan layout sudah selesai di-render
                 setTimeout(updateScrollButtons, 100);
             }
         });

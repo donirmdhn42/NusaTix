@@ -3,19 +3,17 @@ session_start();
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/models/user.php';
 
-// Handle logout action
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
-    setcookie('remember_me', '', time() - 3600, "/"); // Clear remember me cookie
+    setcookie('remember_me', '', time() - 3600, "/"); 
     header("Location: ./index.php");
     exit;
 }
 
-// Handle "Remember Me" for automatic login
 if (isset($_COOKIE['remember_me']) && !isset($_SESSION['user_id'])) {
     list($user_id, $token) = explode(':', $_COOKIE['remember_me']);
-    $user = getUserById($conn, $user_id); // Menggunakan fungsi getUserById yang baru
+    $user = getUserById($conn, $user_id); 
 
     if ($user && hash_equals($user['remember_token'], $token)) {
         $_SESSION['user_id'] = $user['id_user'];
@@ -23,21 +21,15 @@ if (isset($_COOKIE['remember_me']) && !isset($_SESSION['user_id'])) {
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_email'] = $user['email'];
 
-        // Regenerate token for security (preventing fixed token attacks)
         $new_token = bin2hex(random_bytes(32));
-        updateUserRememberToken($conn, $user['id_user'], $new_token); // Update token di DB
-        setcookie('remember_me', $user['id_user'] . ':' . $new_token, time() + (86400 * 30), "/"); // Update cookie
+        updateUserRememberToken($conn, $user['id_user'], $new_token); 
+        setcookie('remember_me', $user['id_user'] . ':' . $new_token, time() + (86400 * 30), "/"); 
 
-        // Redirect to prevent re-submission or simply continue
-        // header("Location: ../index.php");
-        // exit;
     } else {
-        // Invalid or expired token, clear the cookie
         setcookie('remember_me', '', time() - 3600, "/");
     }
 }
 
-// Logika untuk AJAX check email (remains the same)
 if (isset($_POST['action']) && $_POST['action'] === 'check_email') {
     header('Content-Type: application/json');
     $email = trim($_POST['email'] ?? '');
@@ -51,7 +43,6 @@ $error = $_SESSION['login_error'] ?? '';
 $success = '';
 unset($_SESSION['login_error']);
 
-// Proses form registrasi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_form'])) {
     $nama = trim($_POST['nama_lengkap']);
     $email = trim($_POST['email']);
@@ -68,28 +59,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_form'])) {
     }
 }
 
-// Proses form login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_form'])) {
-    $login_identifier = $_POST['login']; // Can be email
+    $login_identifier = $_POST['login']; 
     $password_input = $_POST['password'];
     $remember_me = isset($_POST['remember_me']);
 
     $loginResult = loginUser($conn, $login_identifier, $password_input);
 
     if ($loginResult['status'] === 'success') {
-        // Set "Remember Me" cookie
         if ($remember_me) {
             $user_id = $_SESSION['user_id'];
-            $token = bin2hex(random_bytes(32)); // Generate a secure token
-            updateUserRememberToken($conn, $user_id, $token); // Store token in database
-            setcookie('remember_me', $user_id . ':' . $token, time() + (86400 * 30), "/"); // Cookie valid for 30 days
+            $token = bin2hex(random_bytes(32)); 
+            updateUserRememberToken($conn, $user_id, $token); 
+            setcookie('remember_me', $user_id . ':' . $token, time() + (86400 * 30), "/"); 
         } else {
-            // If not remembering, clear any existing cookie for this user
-            // This is crucial if a user logs in and unchecks "remember me"
+            
             if (isset($_SESSION['user_id'])) {
-                updateUserRememberToken($conn, $_SESSION['user_id'], null); // Clear token in DB
+                updateUserRememberToken($conn, $_SESSION['user_id'], null); 
             }
-            setcookie('remember_me', '', time() - 3600, "/"); // Clear the cookie
+            setcookie('remember_me', '', time() - 3600, "/"); 
         }
 
         $redirect_url = $_GET['redirect_url'] ?? './index.php';
@@ -100,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_form'])) {
     }
 }
 
-// Menampilkan pesan sukses setelah registrasi
 if (isset($_SESSION['success_message'])) {
     $success = $_SESSION['success_message'];
     unset($_SESSION['success_message']);
@@ -110,6 +97,7 @@ if (isset($_SESSION['success_message'])) {
 <html lang="id" class="h-full bg-[#181111]">
 <head>
     <title><?= $mode === 'login' ? 'Login' : 'Daftar' ?> - NusaTix</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' fill='%23ff0000' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E" type="image/svg+xml">
     <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -122,7 +110,6 @@ if (isset($_SESSION['success_message'])) {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
         [x-cloak] { display: none !important; }
-        /* Style for text inputs to ensure dark background even on paste */
         input[type="text"]:-webkit-autofill,
         input[type="email"]:-webkit-autofill,
         input[type="password"]:-webkit-autofill,
@@ -132,8 +119,8 @@ if (isset($_SESSION['success_message'])) {
         input[type="text"]:-webkit-autofill:focus,
         input[type="email"]:-webkit-autofill:focus,
         input[type="password"]:-webkit-autofill:focus {
-            -webkit-text-fill-color: #E5E7EB !important; /* Light text color */
-            -webkit-box-shadow: 0 0 0px 1000px #211717 inset !important; /* Dark background color */
+            -webkit-text-fill-color: #E5E7EB !important; 
+            -webkit-box-shadow: 0 0 0px 1000px #211717 inset !important; 
             transition: background-color 5000s ease-in-out 0s;
         }
     </style>
@@ -235,7 +222,6 @@ if (isset($_SESSION['success_message'])) {
                 this.isLoading = true;
                 setTimeout(() => {
                     this.mode = newMode;
-                    // Reset form fields when switching mode
                     this.form.nama_lengkap = '';
                     this.form.email = '';
                     this.form.password = '';
@@ -272,8 +258,7 @@ if (isset($_SESSION['success_message'])) {
                         Swal.fire({...swalTheme, icon: 'error', title: 'Email Sudah Terdaftar', text: 'Silakan gunakan email lain atau login dengan email ini.'});
                         this.isLoading = false;
                     } else if (data.status === 'available') {
-                        // If email is available, proceed with form submission
-                        this.$el.submit(); // Submit the form programmatically
+                        this.$el.submit(); 
                     } else {
                         Swal.fire({...swalTheme, icon: 'error', title: 'Error', text: data.message || 'Terjadi kesalahan. Silakan coba lagi.'});
                         this.isLoading = false;

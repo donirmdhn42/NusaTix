@@ -44,7 +44,6 @@ if (time() > $expires_at) {
 }
 
 if (!$is_expired && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'pay') {
-    // ... (Logika proses pembayaran tetap sama) ...
     $payment_method = $_POST['payment_method'] ?? null;
     $proof_file = $_FILES['proof_of_payment'] ?? null;
     if (!$payment_method || !$proof_file || $proof_file['error'] !== UPLOAD_ERR_OK) {
@@ -85,6 +84,7 @@ if (!$is_expired && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actio
 <head>
     <meta charset="UTF-8">
     <title>Pembayaran Booking #<?= $booking_id ?></title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' fill='%23ff0000' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E" type="image/svg+xml">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
